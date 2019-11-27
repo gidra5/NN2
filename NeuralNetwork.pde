@@ -6,53 +6,83 @@ class NeuralNetwork
     {
         layers = new NeuronLayer[neuronsPerLayer.length];
 
-        layers[0] = new NeuronLayer(neuronsPerLayer[0], 0);
+        layers[0] = new NeuronLayer(neuronsPerLayer[0], null);
     
         for(int i = 1; i < neuronsPerLayer.length; ++i)
-            layers[i] = new NeuronLayer(neuronsPerLayer[i], neuronsPerLayer[i-1]);
+            layers[i] = new NeuronLayer(neuronsPerLayer[i], layers[i-1]);
     }
 
-    float[] calculate()
+    void setInput(float[] in)
     {
-        float[] data = new float[layers[layers.length-1].neurons.length];
-        for(int i = 0; i < layers[layers.length-1].neurons.length; ++i)
-            data[i] = layers[layers.length-1].neurons[i].getValue();
+        layers[0].setValues(in);
+    }
 
-        return data;
+    float[] getOutput()
+    {
+        return layers[layers.length - 1].getValues();
     }
 
     class NeuronLayer 
     {
-        Neuron[] neurons;
+        private float[] values;
+        private float[] biases;
+        private float[][] weights;
+        private NeuronLayer pl;
 
-        NeuronLayer(int neuronsN, int pl_neuronsN)
+        int neuronsN = 0;
+
+        NeuronLayer(int neuronsN, NeuronLayer pl) //pl - previous layer
         {
-            neurons = new Neuron[neuronsN];
+            int pl_neuronsN;
+
+            if(pl == null) pl_neuronsN = 0; 
+            else pl_neuronsN = pl.neuronsN;
+
+            this.neuronsN = neuronsN;
+
+            values = new float[neuronsN];
+            biases = new float[neuronsN];
 
             for(int i = 0; i < neuronsN; ++i)
-                neurons[i] = new Neuron(pl_neuronsN);
-        }
-    }
+            {
+                values[i] = 0;
+                biases[i] = 0;
+            }
 
-    class Neuron 
-    {
-        float value = 0;
-        float bias = 0;
-        float[] weights;
+            weights = new float[neuronsN][pl_neuronsN];
 
-        Neuron(int pl_neuronsN)
-        {
-            weights = new float[pl_neuronsN];
-
-            for(float w : weights)
-                w = 0;
+            for(int i = 0; i < neuronsN; ++i)
+                for(int j = 0; j < pl_neuronsN; ++j)
+                    weights[i][j] = 0;
         }
 
-        float getValue()
+        void setValues(float[] v)
         {
+            values = v;
+        }
 
+        float[] getValues()
+        {
+            if(pl == null)
+                return values;
 
-            return value;
+            float[] pl_values = pl.getValues();
+
+            for(int i = 0; i < neuronsN; ++i)
+            {
+                for(int j = 0; j < pl.neuronsN; ++j)
+                    values[i] += weights[i][j] * pl_values[j];
+                values[i] += biases[i];
+            }
+
+            return fn(values);
+        }
+
+        float[] fn(float[] x)
+        {
+            for(int i = 0; i < x.length; ++i)
+                x[i] = 1/(1+exp(x[i]));
+            return x;
         }
     }
 }
