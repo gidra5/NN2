@@ -1,9 +1,11 @@
 class Player extends Drawable implements Comparable<Player>
 {
-    float speed = 1;
-    PVector direction = new PVector(0,0);
-    NeuralNetwork nn = new NeuralNetwork(4, 2);
-
+    private float[]       info            = new float[4];
+    private NeuralNetwork nn              = new NeuralNetwork(info.length, 2);
+    private float         direction_angle = 0; // angle between x-axis and direction of movement in radians
+    private final float   max_speed       = 5;
+    private float         speed           = 1;
+    
     int birth;
     int score;
 
@@ -11,13 +13,12 @@ class Player extends Drawable implements Comparable<Player>
     {
         super();
         spawn();
-        direction = PVector.random2D();
+        direction_angle = random(0, TWO_PI);
     }
 
-    int compareTo(Player p) //используется в Arrays.sort()
+    int compareTo(Player p) 
     {
-        return p.score - score; //если счёт
-        //у опонента больше - ты ниже в массиве  
+        return p.score - score;   
     }
 
     void spawn()
@@ -29,14 +30,36 @@ class Player extends Drawable implements Comparable<Player>
 
     void move()
     {
-        pos.x += direction.x*speed;
-        pos.y += direction.y*speed;
+        pos.x += cos(direction_angle) * speed;
+        pos.y += cos(direction_angle) * speed;
     
-        pos.x = min(width+r,max(-r,pos.x));
-        pos.y = min(height+r,max(-r,pos.y));
+        pos.x = min(width  + r,max(-r,pos.x));
+        pos.y = min(height + r,max(-r,pos.y));
     
         if(!isOnScreen())
             dead();
+    }
+
+    void observe()
+    {
+        int n = info.length;
+
+        for(Bullet b : bullets)
+        {
+            PVector d = PVector.sub(b.pos, pos);
+            
+            for(int i = 0; i < n; ++i)
+                info[i] = max(info[i], cos(TWO_PI * i/n) * d.x + sin(TWO_PI * i/n) * d.y);
+        }   
+    }
+
+    void think()
+    {
+        nn.setInput(info);
+        float[] out = nn.getOutput();
+
+        speed            = max_speed * out[0];
+        direction_angle -= TWO_PI    * out[1];
     }
 
     void dead()
@@ -45,9 +68,30 @@ class Player extends Drawable implements Comparable<Player>
         dead_players.add(this);
     }
 
+    boolean isDead()
+    {
+        boolean res = false;
+        for(Bullet b : bullets)
+        {
+            res |= PVector.dist(b.pos, pos) < (b.r + r);
+            if(res)
+            {
+                dead();
+                break;
+            }
+        }
+        
+        return res;
+    }
+
     void update()
     {
-        move();
-        display();
+        if(!isDead());
+        {
+            observe();
+            think();
+            move();
+            display();
+        }
     }
 }

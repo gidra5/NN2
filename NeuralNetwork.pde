@@ -46,14 +46,14 @@ class NeuralNetwork
             for(int i = 0; i < neuronsN; ++i)
             {
                 values[i] = 0;
-                biases[i] = 0;
+                biases[i] = random(-1,1);
             }
 
             weights = new float[neuronsN][pl_neuronsN];
 
             for(int i = 0; i < neuronsN; ++i)
                 for(int j = 0; j < pl_neuronsN; ++j)
-                    weights[i][j] = 0;
+                    weights[i][j] = random(-1,1);
         }
 
         void setValues(float[] v)

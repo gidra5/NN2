@@ -10,7 +10,7 @@ void setup()
 {
     size(800, 600);
     //fullScreen();
-    frameRate(300);
+    frameRate(60);
     ellipseMode(CENTER);
     textSize(20);
 
