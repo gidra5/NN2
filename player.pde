@@ -3,7 +3,7 @@ class Player extends Drawable implements Comparable<Player>
     private float[]       info            = new float[4];
     private NeuralNetwork nn              = new NeuralNetwork(info.length, 2);
     private float         direction_angle = 0; // angle between x-axis and direction of movement in radians
-    private final float   max_speed       = 5;
+    private final float   maxSpeed       = 5;
     private float         speed           = 1;
     
     int birth;
@@ -31,7 +31,7 @@ class Player extends Drawable implements Comparable<Player>
     void move()
     {
         pos.x += cos(direction_angle) * speed;
-        pos.y += cos(direction_angle) * speed;
+        pos.y += sin(direction_angle) * speed;
     
         pos.x = min(width  + r,max(-r,pos.x));
         pos.y = min(height + r,max(-r,pos.y));
@@ -49,7 +49,7 @@ class Player extends Drawable implements Comparable<Player>
             PVector d = PVector.sub(b.pos, pos);
             
             for(int i = 0; i < n; ++i)
-                info[i] = max(info[i], cos(TWO_PI * i/n) * d.x + sin(TWO_PI * i/n) * d.y);
+                info[i] = min(info[i], cos(TWO_PI * i/n) * d.x + sin(TWO_PI * i/n) * d.y);
         }   
     }
 
@@ -58,8 +58,10 @@ class Player extends Drawable implements Comparable<Player>
         nn.setInput(info);
         float[] out = nn.getOutput();
 
-        speed            = max_speed * out[0];
+        speed            = maxSpeed * out[0];
         direction_angle -= TWO_PI    * out[1];
+
+        direction_angle = direction_angle % TWO_PI;
     }
 
     void dead()
@@ -73,7 +75,7 @@ class Player extends Drawable implements Comparable<Player>
         boolean res = false;
         for(Bullet b : bullets)
         {
-            res |= PVector.dist(b.pos, pos) < (b.r + r);
+            res |= PVector.dist(b.pos, pos) < (b.r + r)/2;
             if(res)
             {
                 dead();
