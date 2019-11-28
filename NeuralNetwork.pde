@@ -1,6 +1,6 @@
-class NeuralNetwork
+class NeuralNetwork implements Cloneable
 {
-    NeuronLayer[] layers;
+    private NeuronLayer[] layers;
 
     NeuralNetwork(int ...neuronsPerLayer)
     {
@@ -22,12 +22,30 @@ class NeuralNetwork
         return layers[layers.length - 1].getValues();
     }
 
-    class NeuronLayer 
+    void randomChange()
     {
-        private float[] values;
-        private float[] biases;
-        private float[][] weights;
+        for(NeuronLayer nl : layers)
+        {
+            for(float b : nl.biases)
+                b += randomGaussian();
+            
+            for(int i = 0; i < nl.weights.length; ++i)
+                for(int j = 0; j < nl.weights[i].length; ++j)
+                    nl.weights[i][j] += randomGaussian();
+        }
+    }
+
+    Object clone() throws CloneNotSupportedException
+    {
+        return super.clone();
+    }
+
+    private class NeuronLayer implements Cloneable
+    {
         private NeuronLayer pl;
+        private float[] values;
+        float[] biases;
+        float[][] weights;
 
         int neuronsN = 0;
 
@@ -36,7 +54,10 @@ class NeuralNetwork
             int pl_neuronsN;
 
             if(pl == null) pl_neuronsN = 0; 
-            else pl_neuronsN = pl.neuronsN;
+            else {
+                pl_neuronsN = pl.neuronsN;
+                this.pl = pl;
+            }
 
             this.neuronsN = neuronsN;
 
@@ -46,14 +67,14 @@ class NeuralNetwork
             for(int i = 0; i < neuronsN; ++i)
             {
                 values[i] = 0;
-                biases[i] = random(-1,1);
+                biases[i] = randomGaussian();
             }
 
             weights = new float[neuronsN][pl_neuronsN];
 
             for(int i = 0; i < neuronsN; ++i)
                 for(int j = 0; j < pl_neuronsN; ++j)
-                    weights[i][j] = random(-1,1);
+                    weights[i][j] = randomGaussian();
         }
 
         void setValues(float[] v)
@@ -81,8 +102,13 @@ class NeuralNetwork
         float[] fn(float[] x)
         {
             for(int i = 0; i < x.length; ++i)
-                x[i] = 1/(1+exp(x[i]));
+                x[i] = 2/(1+exp(-x[i])) - 1;
             return x;
+        }
+
+        Object clone() throws CloneNotSupportedException
+        {
+            return super.clone();
         }
     }
 }

@@ -1,22 +1,24 @@
+import java.util.*;
 
 ArrayList<Bullet> bullets;
 ArrayList<Player> players;
-ArrayList<Player> dead_players;
-final int playersN = 5;
-final int bulletsN = 10;
-int generation = 0;
+ArrayList<Player> deadPlayers;
+final int playersN = 50;
+final int bulletsN = 100;
+final int selection = 5;
+int epoch = 1;
 
 void setup()
 {
-    size(800, 600);
-    //fullScreen();
-    frameRate(60);
+    //size(800, 600);
+    fullScreen();
+    frameRate(300);
     ellipseMode(CENTER);
     textSize(20);
 
     bullets = new ArrayList<Bullet>();
     players = new ArrayList<Player>();
-    dead_players = new ArrayList<Player>();
+    deadPlayers = new ArrayList<Player>();
 
     for(int i = 0; i < bulletsN; ++i)
         bullets.add(new Bullet());
@@ -35,10 +37,34 @@ void draw()
     for(Player p : players)
         p.update();
 
-    players.removeAll(dead_players);
+    players.removeAll(deadPlayers);
 
     if(players.isEmpty())
-        setup();
+        newEpoch();
 
-    text(frameRate, 50, 50);
+    text(frameRate + ' ' + epoch, 50, 50);
+}
+
+void newEpoch()
+{
+    bullets.removeAll(bullets);
+    for(int i = 0; i < bulletsN; ++i)
+        bullets.add(new Bullet());
+
+    List<Player> top = deadPlayers.subList(playersN - 1 - selection, playersN - 1);
+
+    for(int i = 0; i < playersN; ++i) 
+    {
+        Player p = new Player();
+        try { 
+            p.nn = (NeuralNetwork) top.get(i % (selection - 1)).nn.clone();
+        } catch (Exception e) { e.printStackTrace(); }
+        p.nn.randomChange();
+
+        players.add(p);
+    }
+
+    deadPlayers.removeAll(deadPlayers);
+
+    epoch++;
 }

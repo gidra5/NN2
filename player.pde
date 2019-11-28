@@ -1,10 +1,10 @@
 class Player extends Drawable implements Comparable<Player>
 {
-    private float[]       info            = new float[4];
-    private NeuralNetwork nn              = new NeuralNetwork(info.length, 2);
-    private float         direction_angle = 0; // angle between x-axis and direction of movement in radians
-    private final float   maxSpeed       = 5;
+    private float[]       info            = new float[8];
+    private float         directionAngle  = 0; // angle between x-axis and direction of movement in radians
+    private final float   maxSpeed        = 5;
     private float         speed           = 1;
+    NeuralNetwork         nn              = new NeuralNetwork(info.length, 4, 2);
     
     int birth;
     int score;
@@ -13,7 +13,7 @@ class Player extends Drawable implements Comparable<Player>
     {
         super();
         spawn();
-        direction_angle = random(0, TWO_PI);
+        directionAngle = random(0, TWO_PI);
     }
 
     int compareTo(Player p) 
@@ -30,8 +30,8 @@ class Player extends Drawable implements Comparable<Player>
 
     void move()
     {
-        pos.x += cos(direction_angle) * speed;
-        pos.y += sin(direction_angle) * speed;
+        pos.x += cos(directionAngle) * speed;
+        pos.y += sin(directionAngle) * speed;
     
         pos.x = min(width  + r,max(-r,pos.x));
         pos.y = min(height + r,max(-r,pos.y));
@@ -46,10 +46,14 @@ class Player extends Drawable implements Comparable<Player>
 
         for(Bullet b : bullets)
         {
-            PVector d = PVector.sub(b.pos, pos);
+            PVector d = PVector.sub(b.pos, pos).normalize();
             
             for(int i = 0; i < n; ++i)
-                info[i] = min(info[i], cos(TWO_PI * i/n) * d.x + sin(TWO_PI * i/n) * d.y);
+            {
+                float proj = cos(TWO_PI * i/n) * d.x + sin(TWO_PI * i/n) * d.y;
+                if(proj > 0 && abs(cos(TWO_PI * i/n) * d.y - sin(TWO_PI * i/n) * d.x) < b.r/2)
+                    info[i] = min(info[i], proj);
+            }
         }   
     }
 
@@ -59,15 +63,15 @@ class Player extends Drawable implements Comparable<Player>
         float[] out = nn.getOutput();
 
         speed            = maxSpeed * out[0];
-        direction_angle -= TWO_PI    * out[1];
+        directionAngle  -= PI       * out[1];
 
-        direction_angle = direction_angle % TWO_PI;
+        directionAngle = directionAngle % TWO_PI;
     }
 
     void dead()
     {        
         score = frameCount-birth;
-        dead_players.add(this);
+        deadPlayers.add(this);
     }
 
     boolean isDead()
