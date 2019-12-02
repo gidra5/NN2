@@ -40,9 +40,47 @@ class NeuralNetwork implements Cloneable
         return super.clone();
     }
 
+    final float x = 150, y = 75, spaceX = 40, spaceY = 25, r = 20;
+
+    void display()
+    {
+        float[] l_values;
+        float[][] l_weights;
+        color tmpColor;
+        colorMode(HSB);
+
+        for (int i = 0; i < layers.length; ++i)
+        {
+            l_values = layers[i].getValues();
+            l_weights = layers[i].weights;
+
+            for (int j = 0; j < l_values.length; ++j)
+            {
+                for (int k = 0; k < l_weights[j].length; ++k)
+                {
+                    tmpColor = color(120 * sigmoid(l_weights[j][k]), 255, 255);
+                    fill(tmpColor);
+                    line(x + i * spaceX, y + j * spaceY, x + (i - 1) * spaceX, y + k * spaceY);
+                }
+
+                tmpColor = color(120 * sigmoid(l_values[j]), 255, 255);
+                fill(tmpColor);
+                ellipse(x + i * spaceX, y + j * spaceY, r, r);
+            }
+        }
+
+        colorMode(RGB);
+    }
+
+    float sigmoid(float x)
+    {
+        x = 1/(1+exp(-x));
+        return x;
+    }
+
     private class NeuronLayer implements Cloneable
     {
-        private NeuronLayer pl;
+        NeuronLayer pl;
         private float[] values;
         float[] biases;
         float[][] weights;
@@ -96,12 +134,12 @@ class NeuralNetwork implements Cloneable
                 values[i] += biases[i];
             }
 
-            return fn(values);
+            return sigmoid(values);
         }
 
-        float[] fn(float[] x)
+        float[] sigmoid(float[] x)
         {
-            for(int i = 0; i < x.length; ++i)
+            for(int i = 0;   i < x.length; ++i)
                 x[i] = 2/(1+exp(-x[i])) - 1;
             return x;
         }

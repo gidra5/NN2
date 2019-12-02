@@ -3,6 +3,7 @@ import java.util.*;
 ArrayList<Bullet> bullets;
 ArrayList<Player> players;
 ArrayList<Player> deadPlayers;
+PlayerInfograph info = new PlayerInfograph();
 final int playersN = 50;
 final int bulletsN = 100;
 final int selection = 5;
@@ -30,7 +31,7 @@ void setup()
 void draw()
 {
     background(127);
-
+    
     for(Bullet b : bullets)
         b.update();
 
@@ -42,7 +43,12 @@ void draw()
     if(players.isEmpty())
         newEpoch();
 
-    text(frameRate + ' ' + epoch, 50, 50);
+    text(frameRate, 50, 50);
+    text(epoch, 150, 50);
+
+    info.p = players.get(0);
+
+    info.display();
 }
 
 void newEpoch()
