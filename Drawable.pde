@@ -13,10 +13,12 @@ abstract class Drawable {
     }
 
     void display()
-    {
-        fill(c);
-        ellipse(pos.x, pos.y, r, r);
-        fill(0);
+    {   
+        if (mousePressed) {
+            fill(c);
+            ellipse(pos.x, pos.y, r, r);
+            fill(0);
+        }
     }
 
     boolean isOnScreen(PVector p)

@@ -1,10 +1,9 @@
 class Player extends Drawable implements Comparable<Player>
 {
-    private float[]       info            = new float[8];
-    private float         directionAngle  = 0; // angle between x-axis and direction of movement in radians
-    private final float   maxSpeed        = 5;
-    private float         speed           = 1;
-    NeuralNetwork         nn              = new NeuralNetwork(info.length, 4, 2);
+    private float[]       info            = new float[10];
+    private PVector       direction       = new PVector();
+    private final float   maxSpeed        = 2;
+    NeuralNetwork         nn              = new NeuralNetwork(info.length, 2);
     
     int birth;
     int score;
@@ -13,7 +12,7 @@ class Player extends Drawable implements Comparable<Player>
     {
         super();
         spawn();
-        directionAngle = random(0, TWO_PI);
+        direction = PVector.random2D();
     }
 
     int compareTo(Player p) 
@@ -30,8 +29,8 @@ class Player extends Drawable implements Comparable<Player>
 
     void move()
     {
-        pos.x += cos(directionAngle) * speed;
-        pos.y += sin(directionAngle) * speed;
+        pos.x += direction.x * maxSpeed;
+        pos.y += direction.y * maxSpeed;
     
         pos.x = min(width  + r,max(-r,pos.x));
         pos.y = min(height + r,max(-r,pos.y));
@@ -43,18 +42,33 @@ class Player extends Drawable implements Comparable<Player>
     void observe()
     {
         int n = info.length;
-
-        for(Bullet b : bullets)
+        float angleDivision = TWO_PI / n;
+        float maxDist = sq(height)+sq(width)-sq(bullets.get(0).r+r)/4;
+        float directionAngle = 0;
+    
+        for(int i = 0; i < n; ++i)
         {
-            PVector d = PVector.sub(b.pos, pos).normalize();
-            
-            for(int i = 0; i < n; ++i)
+            float angle = angleDivision * i + directionAngle;
+            float ax = cos(angle), ay = sin(angle);
+
+            float intersectPointX = min(max(pos.x + ax * (scrCenter.y / abs(ay) - pos.y / ay) / scrCenter.x, -1), 1);
+            float intersectPointY = min(max(pos.y + ay * (scrCenter.x / abs(ax) - pos.x / ax) / scrCenter.y, -1), 1);
+
+            float proj = ax * intersectPointX + ay * intersectPointY;
+            if(proj > 0)
+                info[i] = proj;
+
+            for(Bullet b : bullets)
             {
-                float proj = cos(TWO_PI * i/n) * d.x + sin(TWO_PI * i/n) * d.y;
-                if(proj > 0 && abs(cos(TWO_PI * i/n) * d.y - sin(TWO_PI * i/n) * d.x) < b.r/2)
+                PVector d = PVector.sub(b.pos, pos);
+                d.x /= scrCenter.x;
+                d.y /= scrCenter.y;
+                
+                proj = ax * d.x + ay * d.y;
+                if(proj > 0)
                     info[i] = min(info[i], proj);
             }
-        }   
+        }
     }
 
     void think()
@@ -62,10 +76,14 @@ class Player extends Drawable implements Comparable<Player>
         nn.setInput(info);
         float[] out = nn.getOutput();
 
-        speed            = maxSpeed * out[0];
-        directionAngle  -= PI       * out[1];
+        //speed            = maxSpeed * out[0];
+        //directionAngle   = PI       * out[1];
 
-        directionAngle = directionAngle % TWO_PI;
+        //directionAngle = directionAngle % TWO_PI;
+        direction.x = out[0];
+        direction.y = out[1];
+
+        direction.mult(maxSpeed / 1.4142);
     }
 
     void dead()
@@ -76,18 +94,18 @@ class Player extends Drawable implements Comparable<Player>
 
     boolean isDead()
     {
-        boolean res = false;
+        boolean hitAnyBullet = false;
         for(Bullet b : bullets)
         {
-            res |= PVector.dist(b.pos, pos) < (b.r + r)/2;
-            if(res)
+            hitAnyBullet |= PVector.dist(b.pos, pos) < (b.r + r)/2;
+            if(hitAnyBullet)
             {
                 dead();
                 break;
             }
         }
         
-        return res;
+        return hitAnyBullet;
     }
 
     void update()

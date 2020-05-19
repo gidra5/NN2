@@ -7,6 +7,7 @@ PlayerInfograph info = new PlayerInfograph();
 final int playersN = 50;
 final int bulletsN = 100;
 final int selection = 5;
+int score = 0;
 int epoch = 1;
 
 void setup()
@@ -31,12 +32,6 @@ void setup()
 void draw()
 {
     background(127);
-    
-    for(Bullet b : bullets)
-        b.update();
-
-    for(Player p : players)
-        p.update();
 
     players.removeAll(deadPlayers);
 
@@ -51,8 +46,18 @@ void draw()
     info.display();
 }
 
+void simulate() {
+    score++;
+    for(Bullet b : bullets)
+        b.update();
+
+    for(Player p : players)
+        p.update();
+}
+
 void newEpoch()
 {
+    float learningRate = 5;
     bullets.removeAll(bullets);
     for(int i = 0; i < bulletsN; ++i)
         bullets.add(new Bullet());
@@ -65,12 +70,14 @@ void newEpoch()
         try { 
             p.nn = (NeuralNetwork) top.get(i % (selection - 1)).nn.clone();
         } catch (Exception e) { e.printStackTrace(); }
-        p.nn.randomChange();
+
+        p.nn.randomChange(learningRate);
 
         players.add(p);
     }
 
     deadPlayers.removeAll(deadPlayers);
 
+    score = 0;
     epoch++;
 }
